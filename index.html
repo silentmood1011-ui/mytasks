@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14532d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="مهامي">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>مهامي</title>
+<style>
+:root{--bg:#f6f4ee;--card:#fff;--ink:#1c2a22;--mut:#6b776f;--g:#14532d;--gold:#c9a227;--red:#b42318;--line:#e5e1d6}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:env(safe-area-inset-bottom)}
+header{background:var(--g);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:20px}
+header small{opacity:.8}
+main{max-width:560px;margin:0 auto;padding:12px 12px 90px}
+.add{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;display:grid;gap:8px}
+input,select,button,textarea{font:inherit}
+input[type=text],input[type=datetime-local],select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+button{border:0;border-radius:10px;padding:11px 14px;background:var(--g);color:#fff;font-weight:600;cursor:pointer}
+button.alt{background:#ece8da;color:var(--ink)}
+button.danger{background:#fbe9e7;color:var(--red)}
+.tabs{display:flex;gap:6px;margin:12px 0}
+.tabs button{flex:1;background:#ece8da;color:var(--ink);padding:9px}
+.tabs button.on{background:var(--gold);color:#1c1c1c}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;gap:10px;align-items:flex-start}
+li.done .t{text-decoration:line-through;color:var(--mut)}
+li.over{border-color:var(--red)}
+.chk{width:26px;height:26px;border-radius:50%;border:2px solid var(--g);background:#fff;flex:none;padding:0;color:#fff;font-size:15px;line-height:1}
+li.done .chk{background:var(--g)}
+.body{flex:1;min-width:0}
+.t{font-size:16px;word-break:break-word}
+.m{font-size:12.5px;color:var(--mut);margin-top:3px}
+li.over .m{color:var(--red)}
+.x{background:none;color:var(--mut);padding:4px 8px;font-size:18px}
+.empty{text-align:center;color:var(--mut);padding:30px 0}
+.banner{background:#fff7d6;border:1px solid var(--gold);border-radius:12px;padding:10px;margin:0 0 10px;font-size:14px}
+.toast{position:fixed;inset:auto 12px calc(14px + env(safe-area-inset-bottom)) 12px;max-width:536px;margin:auto;background:#1c2a22;color:#fff;border-radius:14px;padding:12px;z-index:9;display:none}
+.toast.show{display:block}
+details{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<header><h1>مهامي</h1><small id="sum"></small></header>
+<main>
+<div id="notice"></div>
+<form class="add" id="f" autocomplete="off">
+  <input type="text" id="title" placeholder="مهمة جديدة…" maxlength="200" required>
+  <div class="row">
+    <input type="datetime-local" id="due" aria-label="موعد التذكير">
+    <select id="rep" aria-label="التكرار">
+      <option value="">بدون تكرار</option><option value="d">يوميا</option><option value="w">أسبوعيا</option>
+    </select>
+  </div>
+  <button type="submit">إضافة</button>
+</form>
+<div class="tabs" id="tabs">
+  <button data-f="active" class="on">المتبقية</button><button data-f="done">المنجزة</button><button data-f="all">الكل</button>
+</div>
+<ul id="list"></ul>
+<details>
+  <summary>نسخة احتياطية</summary>
+  <p class="m">انسخ النص واحفظه في مكان آمن، ولصقه هنا لاحقا لاسترجاع المهام.</p>
+  <textarea id="bk" rows="4"></textarea>
+  <div class="row" style="margin-top:8px"><button class="alt" id="exp" type="button">تجهيز النسخة</button><button class="alt" id="imp" type="button">استرجاع</button></div>
+  <div class="row" style="margin-top:8px"><button class="danger" id="clr" type="button">حذف المنجزة</button></div>
+</details>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+var KEY='mytasks.v1', tasks=[], filter='active';
+var $=function(i){return document.getElementById(i)};
+function load(){try{tasks=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){tasks=[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(tasks))}catch(e){toast('تعذر الحفظ على الجهاز')}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function fmt(ts){return new Date(ts).toLocaleString('ar-EG',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function render(){
+  var open=tasks.filter(function(t){return !t.done}).length;
+  $('sum').textContent=open?('متبقي '+open+' مهمة'):'مفيش مهام متبقية';
+  var now=Date.now();
+  var rows=tasks.filter(function(t){return filter==='all'||(filter==='done')===!!t.done});
+  rows.sort(function(a,b){if(!!a.done!==!!b.done)return a.done?1:-1;var x=a.due||Infinity,y=b.due||Infinity;return x-y||a.created-b.created});
+  $('list').innerHTML=rows.length?rows.map(function(t){
+    var over=!t.done&&t.due&&t.due<now;
+    var meta=(t.due?('⏰ '+fmt(t.due)):'')+(t.rep?(' · يتكرر '+(t.rep==='d'?'يوميا':'أسبوعيا')):'')+(over?' · متأخرة':'');
+    return '<li class="'+(t.done?'done ':'')+(over?'over':'')+'" data-id="'+t.id+'"><button class="chk" data-a="tg" aria-label="إنجاز">'+(t.done?'✓':'')+'</button><div class="body"><div class="t">'+esc(t.title)+'</div>'+(meta?'<div class="m">'+meta+'</div>':'')+'</div><button class="x" data-a="del" aria-label="حذف">✕</button></li>';
+  }).join(''):'<div class="empty">لا توجد مهام هنا</div>';
+  [].forEach.call($('tabs').children,function(b){b.classList.toggle('on',b.dataset.f===filter)});
+}
+function toast(msg,actions){
+  var el=$('toast');el.innerHTML='<div>'+esc(msg)+'</div>';
+  if(actions){var r=document.createElement('div');r.className='row';r.style.marginTop='8px';actions.forEach(function(a){var b=document.createElement('button');b.className='alt';b.textContent=a[0];b.onclick=function(){el.classList.remove('show');a[1]()};r.appendChild(b)});el.appendChild(r)}
+  el.classList.add('show');if(!actions)setTimeout(function(){el.classList.remove('show')},2500);
+}
+function beep(){try{var c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.15;o.start();setTimeout(function(){o.stop()},350)}catch(e){}}
+function notify(t){
+  var body='حان موعد المهمة';
+  try{
+    if('Notification' in window&&Notification.permission==='granted'){
+      if(navigator.serviceWorker&&navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(function(r){r.showNotification(t.title,{body:body,tag:t.id,icon:'icon-192.png'})})}
+      else new Notification(t.title,{body:body,tag:t.id,icon:'icon-192.png'});
+    }
+  }catch(e){}
+  beep();if(navigator.vibrate)navigator.vibrate([200,100,200]);
+  toast('⏰ '+t.title,[['تم',function(){toggle(t.id,true)}],['أجّل ١٠ دقائق',function(){t.due=Date.now()+600000;t.fired=false;save();render()}],['إغلاق',function(){}]]);
+}
+function nextDue(t){var step=t.rep==='d'?864e5:604800000,d=t.due;while(d<=Date.now())d+=step;return d}
+function tick(){
+  var now=Date.now();
+  tasks.forEach(function(t){
+    if(!t.done&&t.due&&t.due<=now&&!t.fired){
+      t.fired=true;save();notify(t);
+      if(t.rep){t.due=nextDue(t);t.fired=false;save()}
+      render();
+    }
+  });
+}
+function toggle(id,force){
+  tasks.forEach(function(t){if(t.id===id){t.done=force||!t.done;if(t.done)t.fired=true}});save();render();
+}
+$('f').addEventListener('submit',function(e){
+  e.preventDefault();
+  var title=$('title').value.trim();if(!title)return;
+  var due=$('due').value?new Date($('due').value).getTime():null;
+  tasks.push({id:uid(),title:title,done:false,created:Date.now(),due:due,rep:due?$('rep').value:'',fired:false});
+  save();$('f').reset();filter='active';render();
+  if(due)askPerm();
+});
+$('list').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var id=b.closest('li').dataset.id;
+  if(b.dataset.a==='tg')toggle(id);
+  if(b.dataset.a==='del'){
+    var t=tasks.filter(function(x){return x.id===id})[0];
+    toast('حذف "'+t.title+'"؟',[['نعم احذف',function(){tasks=tasks.filter(function(x){return x.id!==id});save();render()}],['إلغاء',function(){}]]);
+  }
+});
+$('tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(b){filter=b.dataset.f;render()}});
+$('exp').onclick=function(){$('bk').value=JSON.stringify(tasks);$('bk').select()};
+$('imp').onclick=function(){try{var a=JSON.parse($('bk').value);if(!Array.isArray(a))throw 0;tasks=a.filter(function(t){return t&&typeof t.title==='string'}).map(function(t){return{id:t.id||uid(),title:String(t.title).slice(0,200),done:!!t.done,created:t.created||Date.now(),due:+t.due||null,rep:t.rep==='d'||t.rep==='w'?t.rep:'',fired:!!t.fired}});save();render();toast('تم الاسترجاع')}catch(e){toast('النص غير صالح')}};
+$('clr').onclick=function(){toast('حذف كل المهام المنجزة؟',[['نعم',function(){tasks=tasks.filter(function(t){return !t.done});save();render()}],['إلغاء',function(){}]])};
+function askPerm(){if('Notification' in window&&Notification.permission==='default'){Notification.requestPermission().then(banner)}}
+function banner(){
+  var n=$('notice');n.innerHTML='';
+  if(!('Notification' in window)||Notification.permission==='denied'){n.innerHTML='<div class="banner">الإشعارات غير مفعّلة. التذكير هيظهر جوه التطبيق مع صوت واهتزاز لما يكون مفتوح.</div>'}
+  else n.innerHTML='<div class="banner">التذكيرات بتشتغل لما التطبيق يكون مفتوح أو شغال في الخلفية. لو اتقفل تماما ممكن التذكير يتأخر لحد ما تفتحه.</div>';
+}
+load();render();banner();tick();setInterval(tick,15000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)tick()});
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(function(){});
+})();
+</script>
+</body>
+</html>
