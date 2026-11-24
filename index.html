@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="مهامي">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAEcElEQVR4nO3cPVIjMRRF4ccUNStgG7OSCQhY6QRsjmiCrupy+UdW+7b0rqTzhSSYp+PXbWx4+/j6E8CrfmU/AIyNgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoLkPfsBPPH9+ZP9EJL9/fc7+yGUvHn+m1+6ucswJruASOcpq4y87oGop4bVlFw2kNVQRuGwiiw2EPW8xmFu+QE5TGFc6dNLvoTV/PwOizqR+Yh8fw+0eDe7bQ7pm+aRzA1UGAr13GU4sbR7IMNZ+CtMJmtF5d9EX6GeMrf55AT06OniNh1Pj6aUsoSMNhD1jMgoINTzebIlBGT7inQC/WfrsoF8nlKjMJmYS0AYFAFBQkCQEBAkBAQJAUFCQJAQECQEBAkBQUJAkBAQJAQECQGlmeNjLQSUY6tngoYIKMFlN9+fP0NnREC93c1l3IYIyMWgDRFQV+VKRrycEVA/lXGM1RABdVKfhcmn5SsRUA+z1hME1MHE9QQBtTbWDc0LCMjFiOsnCKipuS9eGwJqZYV6goAaWaSeIKAW1qknCOh0S9UTBHSu6V+03yKgHHOsnyCgE6128doQ0DnWrCcI6BTL1hMEpFu5niAg0eL1xDQBpbx+XvBF+60ZAvL/G6tZ10/MEdCuZ0NcvDbDB3R1kH0aop7d2AGl/JEe9VwaOKDCQbZriHquDBxQWYuGqOfWqAHVnOW5DTm/yks0ZED1Z5ly6uusnxg0oEMndEpDXLweGTKg6NsQ9RSMGlD0aoh6ygYOKNo3RD1PjR1QHG+oxQ34svXEBAHF8fPr/yuAic0QULRpqNG3nswkAcWpDXHxqjdPQHFSQ9RzyFQBhdwQ9Rw1W0AhNEQ9L3jPfgBNbAfc6C0z6rk04QbacdIdzBxQNGiIKK9MHlCceuTUc2v+gOKkg6eeu5YIKOTjp55HVgkohAiop2ChgOKlFKinbK2AgiDOtlxAcaQhantqxYCirgzqqbFoQPG4j+3r1FNp3YDiWUOosXRAcdMK6Rw157vxhxCNYvUNBBEBQUJAkBAQJAQECQFBQkCQEBAkBAQJAUFCQJAQECQJAd1985J/6HTU3Yn1f2OYDQSJUUAsoXo+szIKCKKUDzblBPToR/V5YjmzmpLdBrKajiG3+aQFVNi3bjPyUZhM1gdz3z6+/qR84025FT6tvLMdlPWH6repLZ7R032cO5/kDRRcsGS5AeXfRC++YETp08vfQBv20FHp6WxcAtqQUSWTesLhEnbJZy7OrKbktYF2rKJbVt3sTAPaUZJnNzv3gGDO6x4IwyEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICguQ/ZdxdB4C8FRQAAAAASUVORK5CYII=">
 <title>مهامي</title>
 <style>
 :root{--bg:#f6f4ee;--card:#fff;--ink:#1c2a22;--mut:#6b776f;--g:#14532d;--gold:#c9a227;--red:#b42318;--line:#e5e1d6}
@@ -106,8 +106,8 @@ function notify(t){
   var body='حان موعد المهمة';
   try{
     if('Notification' in window&&Notification.permission==='granted'){
-      if(navigator.serviceWorker&&navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(function(r){r.showNotification(t.title,{body:body,tag:t.id,icon:'icon-192.png'})})}
-      else new Notification(t.title,{body:body,tag:t.id,icon:'icon-192.png'});
+      if(navigator.serviceWorker&&navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(function(r){r.showNotification(t.title,{body:body,tag:t.id,icon:'icon.svg'})})}
+      else new Notification(t.title,{body:body,tag:t.id,icon:'icon.svg'});
     }
   }catch(e){}
   beep();if(navigator.vibrate)navigator.vibrate([200,100,200]);
